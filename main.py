@@ -10,7 +10,7 @@ app = FastAPI()
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 class StudentData(BaseModel):
-    transcript: str  # Bảng điểm hoặc tình trạng học tập
+    student_id: str  
     concerns: str    # Vấn đề cụ thể (vắng học, điểm thấp, tâm lý...)
 
 @app.post("/get-advice")
@@ -21,19 +21,23 @@ async def get_advisor_advice(data: StudentData):
                 {
                     "role": "system",
                     "content": (
-                        "Bạn là một chuyên gia cố vấn học tập dày dạn kinh nghiệm. "
-                        "Hãy phân tích dữ liệu sinh viên và đưa ra lời khuyên cụ thể, "
-                        "đồng cảm và có tính thực tiễn cao cho giảng viên cố vấn."
+                        "Bạn là một AI hỗ trợ cố vấn học tập tìm giải pháp hỗ trợ cải thiện tình hình học tập của sinh viên."
+                        "Hãy phân tích các vấn đề của sinh viên và đưa ra lời khuyên cụ thể."
+                        "Cần đồng cảm và có tính thực tiễn cao cho giảng viên cố vấn."
+                        "Loại bỏ các kí tự không cần thiết"
                     ),
                 },
                 {
                     "role": "user",
-                    "content": f"Dữ liệu sinh viên: {data.transcript}\nVấn đề cần tư vấn: {data.concerns}",
+                    "content": f"Vấn đề cần tư vấn: {data.concerns}",
                 }
             ],
             model="llama-3.3-70b-versatile", # Model mạnh nhất của Groq hiện tại
         )
-        return {"advice": chat_completion.choices[0].message.content}
+        return {
+            "student_id": data.student_id
+            "analysis": chat_completion.choices[0].message.content
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
