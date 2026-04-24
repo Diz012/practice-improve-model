@@ -23,7 +23,7 @@ def extract_study_hours(ly_do):
 def generate_quiz(mssv, mon_hoc, ly_do_rot):
     # Xác định số lượng câu hỏi dựa trên logic trong file
     study_hours = extract_study_hours(ly_do_rot)
-    num_questions = 30
+    num_questions = 20
     
     level_questions = 'khó' # Mặc định
     if study_hours < 20 or "không có đề ôn tập" in ly_do_rot.lower():
@@ -70,8 +70,20 @@ def generate_quiz(mssv, mon_hoc, ly_do_rot):
             response_format={"type": "json_object"}
         )
 
-        # Sửa lỗi truy xuất .choices[0]
         data = json.loads(chat_completion.choices[0].message.content)
+        max_retries = 2 # Thử lại nếu không đủ số lượng
+        for attempt in range(max_retries):
+            chat_completion = client.chat.completions.create(
+                # ... cấu hình messages ...
+            )
+            
+            data = json.loads(chat_completion.choices[0].message.content)
+            questions = data.get("danh_sach_cau_hoi", [])
+            
+            if len(questions) == 20:
+                return data
+            else:
+                print(f"Lần {attempt+1}: Model tạo ra {len(questions)} câu, đang thử lại...")
         return data
 
     except Exception as e:
