@@ -6,32 +6,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 app = FastAPI()
-promt_AI = f"""
-    Thông tin:
-    - MSSV: {mssv}
-    - Môn học: {mon_hoc}
-    - Lý do rớt: {ly_do_rot} (Thời gian tự học: {study_hours}h)
-
-    Hãy tạo đúng chính xác 30 câu hỏi trắc nghiệm cho môn {mon_hoc}. 
-    Yêu cầu:
-    1. Trả về đúng 30 đối tượng trong danh sách 'danh_sach_cau_hoi'.
-    2. Mức độ: {level_questions}.
-    3. Định dạng JSON nghiêm ngặt.
-    4. Có thể tham khảo trên trang eduquiz.vn
-    (Không được trả về ít hơn hoặc nhiều hơn 30 câu). 
-    
-    Yêu cầu trả về duy nhất một đối tượng JSON có cấu trúc như sau:
-    {{
-        "danh_sach_cau_hoi": [
-            {{
-                "cau_hoi": "Nội dung câu hỏi...",
-                "dap_an": {{"A": "...", "B": "...", "C": "...", "D": "..."}},
-                "lua_chon_dung": "Nguyên văn nội dung của đáp án đúng",
-                "giai_thich": "..."
-            }}
-        ]
-    }}
-    """
 
 class QuizRequest(BaseModel):
     mssv: str
@@ -59,7 +33,32 @@ def generate_quiz(mssv, mon_hoc, ly_do_rot):
     elif study_hours < 60:
         level_questions = 'khó'
 
-    prompt = promt_AI
+    prompt = f"""
+    Thông tin:
+    - MSSV: {mssv}
+    - Môn học: {mon_hoc}
+    - Lý do rớt: {ly_do_rot} (Thời gian tự học: {study_hours}h)
+
+    Hãy tạo đúng chính xác 30 câu hỏi trắc nghiệm cho môn {mon_hoc}. 
+    Yêu cầu:
+    1. Trả về đúng 30 đối tượng trong danh sách 'danh_sach_cau_hoi'.
+    2. Mức độ: {level_questions}.
+    3. Định dạng JSON nghiêm ngặt.
+    4. Có thể tham khảo trên trang eduquiz.vn
+    (Không được trả về ít hơn hoặc nhiều hơn 30 câu). 
+    
+    Yêu cầu trả về duy nhất một đối tượng JSON có cấu trúc như sau:
+    {{
+        "danh_sach_cau_hoi": [
+            {{
+                "cau_hoi": "Nội dung câu hỏi...",
+                "dap_an": {{"A": "...", "B": "...", "C": "...", "D": "..."}},
+                "lua_chon_dung": "Nguyên văn nội dung của đáp án đúng",
+                "giai_thich": "..."
+            }}
+        ]
+    }}
+    """
 
     try:
         chat_completion = client.chat.completions.create(
@@ -75,7 +74,7 @@ def generate_quiz(mssv, mon_hoc, ly_do_rot):
         max_retries = 2 # Thử lại nếu không đủ số lượng
         for attempt in range(max_retries):
             chat_completion = client.chat.completions.create(
-                promt_AI
+                prompt
             )
             
             data = json.loads(chat_completion.choices[0].message.content)
